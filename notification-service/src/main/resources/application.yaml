@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: notification-service
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: notification-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      properties:
+        spring.json.trusted.packages: "*"
+        spring.json.value.default.type: com.tracker.notification.dto.TaskEvent
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: your_email@gmail.com #гугл почта откуда отправлять
+    password: your_app_password    #пароль приложения
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+server:
+  port: 8083
+
+logging:
+  level:
+    com.tracker.notification: DEBUG
+    org.springframework.kafka: DEBUG
