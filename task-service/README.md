@@ -28,6 +28,7 @@
 
 ```bash
 docker-compose up -d
+```
 
 ## Документация API
 
@@ -35,4 +36,4 @@ Swagger: http://localhost:8080/swagger-ui/index.html
 
 ## Переменные окружения
 
-JWT_SECRET — ключ для подписи JWT
+- `JWT_SECRET` — ключ для подписи JWT
