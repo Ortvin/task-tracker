@@ -14,7 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -82,5 +82,17 @@ public class TaskController {
             @RequestHeader("X-Role") String role
     ) {
         return ResponseEntity.ok(taskService.getTaskById(id, userId, role));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteTask(
+            @PathVariable Long id,
+            @RequestHeader("X-Role") String role
+    ) {
+        if (!"ADMIN".equals(role)) {
+            throw new AccessDeniedException("Only ADMIN can delete tasks");
+        }
+        taskService.deleteTask(id);
+        return ResponseEntity.noContent().build();
     }
 }

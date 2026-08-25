@@ -18,7 +18,7 @@ public class TaskResponse {
     private String title;
     private String description;
     private String taskTypeName;
-    private TaskStatusDto status;      // ← добавить
+    private TaskStatusDto status;
     private LocalDateTime dateCreated;
     private LocalDateTime datePlanFinal;
     private LocalDateTime dateFactFinal;
