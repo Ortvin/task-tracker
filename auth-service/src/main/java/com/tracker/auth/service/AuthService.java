@@ -46,8 +46,6 @@ public class AuthService {
                 .role(userRole)
                 .build();
 
-        userRepository.save(user);
-
         User savedUser = userRepository.save(user);
 
         // Отправляем событие
