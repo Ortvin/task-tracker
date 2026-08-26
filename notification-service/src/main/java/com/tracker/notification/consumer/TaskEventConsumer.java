@@ -35,10 +35,10 @@ public class TaskEventConsumer {
             log.info("Received task event: {}", event);
             log.info("Sending email to: {}", event.getUserEmail());
 
-         /*   emailService.sendSimpleMessage(
+            emailService.sendSimpleMessage(
                     event.getUserEmail(),
                     "Новая задача: " + event.getTitle(),
-                    "Создана задача: " + event.getTitle() + "\nОписание: " + event.getDescription());*/
+                    "Создана задача: " + event.getTitle() + "\nОписание: " + event.getDescription());
 
         } catch (Exception e) {
             log.error("Error processing task event", e);

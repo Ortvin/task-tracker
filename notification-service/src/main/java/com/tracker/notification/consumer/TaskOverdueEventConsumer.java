@@ -34,10 +34,10 @@ public class TaskOverdueEventConsumer {
             log.info("Received overdue event: {}", event);
             log.info("Sending overdue notification to: {}", event.getUserEmail());
 
-        /*    emailService.sendSimpleMessage(
+            emailService.sendSimpleMessage(
                     event.getUserEmail(),
                     "Задача просрочена: " + event.getTitle(),
-                    "Задача " + event.getTitle() + " просрочена. Дедлайн: " + event.getDeadline());*/
+                    "Задача " + event.getTitle() + " просрочена. Дедлайн: " + event.getDeadline());
 
         } catch (Exception e) {
             log.error("Error processing overdue event", e);
