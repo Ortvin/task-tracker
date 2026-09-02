@@ -46,6 +46,9 @@ public class TaskServiceTest {
     private TaskStatusRepository taskStatusRepository;
 
     @Mock
+    private TaskStatusHistoryRepository taskStatusHistoryRepository;
+
+    @Mock
     private UserContactService userContactService;
 
     @Mock
@@ -226,10 +229,16 @@ public class TaskServiceTest {
         userRole.setId(2L);
         userRole.setName("Исполнитель");
 
+        Person changer = new Person();
+        changer.setUserId(userId);
+        changer.setName("Executor");
+        changer.setLastName("Test");
+
+        when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTask));
         when(taskParticipantRepository.findRoleByTaskIdAndUserId(taskId, userId))
                 .thenReturn(Optional.of(userRole));
-        when(taskRepository.findById(taskId)).thenReturn(Optional.of(existingTask));
         when(taskStatusRepository.findById(3L)).thenReturn(Optional.of(status));
+        when(personRepository.findByUserId(userId)).thenReturn(Optional.of(changer));
         when(taskRepository.save(any())).thenReturn(updatedTask);
         when(taskMapper.toResponse(any())).thenReturn(response);
 
@@ -259,5 +268,50 @@ public class TaskServiceTest {
         assertThatThrownBy(() -> taskService.deleteTask(taskId))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Task not found");
+    }
+
+    @Test
+    void createTask_ShouldSaveStatusHistory() {
+        // Arrange
+        Long userId = 1L;
+        TaskCreateRequest request = new TaskCreateRequest();
+        request.setTitle("Test Task");
+        request.setTaskTypeId(1L);
+
+        TaskType taskType = new TaskType();
+        taskType.setId(1L);
+        taskType.setName("Epic");
+
+        TaskStatus status = new TaskStatus();
+        status.setId(1L);
+        status.setCode("PENDING");
+
+        Task task = new Task();
+        task.setId(1L);
+        task.setTitle("Test Task");
+        task.setTaskType(taskType);
+        task.setStatus(status);
+
+        Person author = new Person();
+        author.setUserId(userId);
+
+        ParticipantRole authorRole = new ParticipantRole();
+        authorRole.setId(1L);
+        authorRole.setName("Создатель");
+
+        TaskResponse response = new TaskResponse();
+        response.setId(1L);
+        response.setTitle("Test Task");
+
+        when(taskMapper.toEntity(any())).thenReturn(task);
+        when(taskRepository.save(any())).thenReturn(task);
+        when(personRepository.findByUserId(userId)).thenReturn(Optional.of(author));
+        when(participantRoleRepository.findById(1L)).thenReturn(Optional.of(authorRole));
+        when(userContactService.getPrimaryEmail(userId)).thenReturn("test@example.com");
+        when(taskMapper.toResponse(any())).thenReturn(response);
+
+        taskService.createTask(request, userId);
+        
+        verify(taskStatusHistoryRepository).save(any(TaskStatusHistory.class));
     }
 }

@@ -3,6 +3,7 @@ package com.tracker.task.service;
 import com.tracker.task.dto.request.TaskCreateRequest;
 import com.tracker.task.dto.request.TaskPatchRequest;
 import com.tracker.task.dto.response.TaskResponse;
+import com.tracker.task.dto.response.TaskStatusHistoryResponse;
 import com.tracker.task.event.TaskEvent;
 import com.tracker.task.kafka.TaskEventProducer;
 import com.tracker.task.mapper.TaskMapper;
@@ -33,6 +34,7 @@ public class TaskService {
     private final PersonRepository personRepository;
     private final ParticipantRoleRepository participantRoleRepository;
     private final TaskParticipantRepository taskParticipantRepository;
+    private final TaskStatusHistoryRepository taskStatusHistoryRepository;
 
     @Transactional
     public TaskResponse createTask(TaskCreateRequest request, Long userId) {
@@ -53,6 +55,14 @@ public class TaskService {
                 .build();
 
         task.getParticipants().add(taskParticipant);
+
+        TaskStatusHistory history = TaskStatusHistory.builder()
+                .taskId(saved.getId())
+                .status(saved.getStatus())
+                .changedBy(author)
+                .build();
+        taskStatusHistoryRepository.save(history);
+
         // Отправляем email в Kafka
         String email = userContactService.getPrimaryEmail(userId);
         TaskEvent event = TaskEvent.builder()
@@ -106,6 +116,27 @@ public class TaskService {
                 .orElseThrow(() -> new IllegalArgumentException("TaskType not found")));
         task.setDatePlanFinal(request.getDatePlanFinal());
 
+        // Если статус передан — обновляем и сохраняем историю
+        if (request.getStatusId() != null) {
+            TaskStatus oldStatus = task.getStatus();
+            TaskStatus newStatus = taskStatusRepository.findById(request.getStatusId())
+                    .orElseThrow(() -> new IllegalArgumentException("Status not found"));
+
+            if (!oldStatus.getId().equals(newStatus.getId())) {
+                task.setStatus(newStatus);
+
+                Person changer = personRepository.findByUserId(userId)
+                        .orElseThrow(() -> new RuntimeException("Person not found"));
+
+                TaskStatusHistory history = TaskStatusHistory.builder()
+                        .taskId(task.getId())
+                        .status(newStatus)
+                        .changedBy(changer)
+                        .build();
+                taskStatusHistoryRepository.save(history);
+            }
+        }
+
         return taskMapper.toResponse(taskRepository.save(task));
     }
 
@@ -143,6 +174,16 @@ public class TaskService {
             TaskStatus status = taskStatusRepository.findById(request.getStatusId())
                     .orElseThrow(() -> new IllegalArgumentException("Status not found"));
             task.setStatus(status);
+
+            Person changer = personRepository.findByUserId(userId)
+                    .orElseThrow(() -> new RuntimeException("Person not found"));
+
+            TaskStatusHistory history = TaskStatusHistory.builder()
+                    .taskId(task.getId())
+                    .status(status)
+                    .changedBy(changer)
+                    .build();
+            taskStatusHistoryRepository.save(history);
         }
 
         return taskMapper.toResponse(taskRepository.save(task));
@@ -222,6 +263,29 @@ public class TaskService {
         String roleName = userRole.getName();
 
         return "Создатель".equals(roleName) || "Исполнитель".equals(roleName);
+    }
+
+    public List<TaskStatusHistoryResponse> getTaskStatusHistory(Long taskId, Long userId, String role) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found"));
+
+      /*  if (!"ADMIN".equals(role) && !isParticipant(taskId, userId)) {
+            throw new AccessDeniedException("Access denied");
+        }*/
+
+        List<TaskStatusHistory> historyList = taskStatusHistoryRepository
+                .findByTaskIdOrderByChangedAtDesc(taskId);
+
+        return historyList.stream()
+                .map(h -> TaskStatusHistoryResponse.builder()
+                        .id(h.getId())
+                        .taskId(h.getTaskId())
+                        .statusCode(h.getStatus().getCode())
+                        .statusName(h.getStatus().getName())
+                        .changedBy(h.getChangedBy().getLastName() + " " + h.getChangedBy().getName())
+                        .changedAt(h.getChangedAt())
+                        .build())
+                .collect(Collectors.toList());
     }
 
 }

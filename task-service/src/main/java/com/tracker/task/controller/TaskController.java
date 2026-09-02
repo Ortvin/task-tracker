@@ -3,6 +3,7 @@ package com.tracker.task.controller;
 import com.tracker.task.dto.request.TaskCreateRequest;
 import com.tracker.task.dto.request.TaskPatchRequest;
 import com.tracker.task.dto.response.TaskResponse;
+import com.tracker.task.dto.response.TaskStatusHistoryResponse;
 import com.tracker.task.mapper.TaskMapper;
 import com.tracker.task.model.Task;
 import com.tracker.task.service.TaskService;
@@ -18,6 +19,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/tasks")
@@ -94,5 +96,14 @@ public class TaskController {
         }
         taskService.deleteTask(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/history")
+    public ResponseEntity<List<TaskStatusHistoryResponse>> getTaskHistory(
+            @PathVariable Long id,
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestHeader("X-Role") String role
+    ) {
+        return ResponseEntity.ok(taskService.getTaskStatusHistory(id, userId, role));
     }
 }

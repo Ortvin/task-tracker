@@ -28,4 +28,6 @@ public class TaskCreateRequest {
     private LocalDateTime datePlanFinal;
 
     private List<TaskParticipantRequest> participants;
+
+    private Long statusId;
 }
